@@ -48,7 +48,20 @@ class Pix2PixHDModel(BaseModel):
         ### Encoder network
         if self.gen_features:          
             self.netE = networks.define_G(opt.output_nc, opt.feat_num, opt.nef, 'encoder', 
-                                          opt.n_downsample_E, norm=opt.norm, gpu_ids=self.gpu_ids)  
+                                          opt.n_downsample_E, norm=opt.norm, gpu_ids=self.gpu_ids)
+
+        # Conditional .cuda() logic
+        if torch.cuda.is_available():
+            self.netG = self.netG.cuda()
+            self.netD = self.netD.cuda()
+            if self.gen_features:
+                self.netE = self.netE.cuda()
+        else:
+            self.netG = self.netG.cpu()
+            self.netD = self.netD.cpu()
+            if self.gen_features:
+                self.netE = self.netE.cpu()
+        
         if self.opt.verbose:
                 print('---------- Networks initialized -------------')
 
