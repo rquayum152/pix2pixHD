@@ -68,6 +68,8 @@ class AlignedDataset(BaseDataset):
                       'feat': feat_tensor, 'path': A_path}
 
         return input_dict
+        print("A_paths:", self.A_paths)
+        print("B_paths:", self.B_paths)
 
     def __len__(self):
         return len(self.A_paths) // self.opt.batchSize * self.opt.batchSize
