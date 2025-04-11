@@ -14,13 +14,13 @@ from models.models import create_model
 import util.util as util
 from util.visualizer import Visualizer
 
-print(torch.cuda.is_available())
+#print(torch.cuda.is_available())
 
 # Initialize options (opt) before using it
 opt = TrainOptions().parse()
 
 # Set device based on GPU availability
-device = torch.device("cuda" if torch.cuda.is_available() and opt.gpu_ids != -1 else "cpu")
+device = torch.device("cpu")
 
 # Initialize model here
 model = create_model(opt)
