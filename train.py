@@ -139,3 +139,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     ### linearly decay learning rate after certain iterations
     if epoch > opt.niter:
         model.module.update_learning_rate()
+
+    print("A_paths:", self.A_paths)
+    print("B_paths:", self.B_paths)
+
