@@ -14,6 +14,15 @@ from models.models import create_model
 import util.util as util
 from util.visualizer import Visualizer
 
+# Set device based on GPU availability
+device = torch.device("cuda" if torch.cuda.is_available() and opt.gpu_ids != -1 else "cpu")
+
+# Initialize model here
+model = create_model(opt)
+
+# Move model to the chosen device
+model.to(device)
+
 opt = TrainOptions().parse()
 iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
 if opt.continue_train:
@@ -140,6 +149,6 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     if epoch > opt.niter:
         model.module.update_learning_rate()
 
-    print("A_paths:", self.A_paths)
-    print("B_paths:", self.B_paths)
+   # print("A_paths:", self.A_paths)
+    # print("B_paths:", self.B_paths)
 
