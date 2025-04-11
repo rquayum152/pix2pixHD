@@ -14,6 +14,8 @@ from models.models import create_model
 import util.util as util
 from util.visualizer import Visualizer
 
+print(torch.cuda.is_available())
+
 # Initialize options (opt) before using it
 opt = TrainOptions().parse()
 
