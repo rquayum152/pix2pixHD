@@ -31,6 +31,8 @@ class AlignedDataset(BaseDataset):
             self.feat_paths = sorted(make_dataset(self.dir_feat))
 
         self.dataset_size = len(self.A_paths) 
+        print("A_paths:", self.A_paths)
+        print("B_paths:", self.B_paths)
       
     def __getitem__(self, index):        
         ### input A (label maps)
@@ -68,8 +70,6 @@ class AlignedDataset(BaseDataset):
                       'feat': feat_tensor, 'path': A_path}
 
         return input_dict
-        print("A_paths:", self.A_paths)
-        print("B_paths:", self.B_paths)
 
     def __len__(self):
         return len(self.A_paths) // self.opt.batchSize * self.opt.batchSize
