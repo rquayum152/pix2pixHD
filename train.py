@@ -28,6 +28,8 @@ model = create_model(opt)
 # Move model to the chosen device
 model.to(device)
 
+print(next(model.parameters()).device)
+
 #opt = TrainOptions().parse()
 iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
 if opt.continue_train:
