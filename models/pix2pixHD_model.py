@@ -307,11 +307,10 @@ class InferenceModel(Pix2PixHDModel):
         self.gpu_ids = opt.gpu_ids
 
         # Define and load the generator network (netG)
-        self.netG = self.define_G(opt.input_nc, opt.output_nc, opt.ngf,
-                                  opt.netG, opt.norm, not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
+        self.netG = networks.define_G(netG_input_nc, opt.output_nc, opt.ngf, opt.netG, 
+                                  opt.n_downsample_global, opt.n_blocks_global, opt.n_local_enhancers, 
+                                  opt.n_blocks_local, opt.norm, gpu_ids=self.gpu_ids) 
         self.load_network(self.netG, 'G', opt.which_epoch, opt)
-
-        print(f"[DEBUG] netG initialized: {self.netG.__class__.__name__}")
 
     def forward(self, inp):
         label, inst = inp
