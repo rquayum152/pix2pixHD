@@ -300,6 +300,19 @@ def initialize(self, opt):
         self.old_lr = lr
 
 class InferenceModel(Pix2PixHDModel):
+
+    def initialize(self, opt):
+        self.opt = opt
+        self.isTrain = False
+        self.gpu_ids = opt.gpu_ids
+
+        # Define and load the generator network (netG)
+        self.netG = self.define_G(opt.input_nc, opt.output_nc, opt.ngf,
+                                  opt.netG, opt.norm, not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
+        self.load_network(self.netG, 'G', opt.which_epoch, opt)
+
+        print(f"[DEBUG] netG initialized: {self.netG.__class__.__name__}")
+
     def forward(self, inp):
         label, inst = inp
         return self.inference(label, inst)
