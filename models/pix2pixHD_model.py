@@ -16,108 +16,93 @@ class Pix2PixHDModel(BaseModel):
             return [l for (l,f) in zip((g_gan,g_gan_feat,g_vgg,d_real,d_fake),flags) if f]
         return loss_filter
     
-    def initialize(self, opt):
-        BaseModel.initialize(self, opt)
-        if opt.resize_or_crop != 'none' or not opt.isTrain: # when training at full res this causes OOM
-            torch.backends.cudnn.benchmark = True
-        self.isTrain = opt.isTrain
-        self.use_features = opt.instance_feat or opt.label_feat
-        self.gen_features = self.use_features and not self.opt.load_features
-        input_nc = opt.label_nc if opt.label_nc != 0 else opt.input_nc
+def initialize(self, opt):
+    BaseModel.initialize(self, opt)
+    if opt.resize_or_crop != 'none' or not opt.isTrain:  # when training at full res, this can cause OOM
+        torch.backends.cudnn.benchmark = True
+    self.isTrain = opt.isTrain
+    self.use_features = opt.instance_feat or opt.label_feat
+    self.gen_features = self.use_features and not self.opt.load_features
+    input_nc = opt.label_nc if opt.label_nc != 0 else opt.input_nc
 
-        ##### define networks        
-        # Generator network
-        netG_input_nc = input_nc        
+    ##### define networks        
+    # Generator network
+    netG_input_nc = input_nc        
+    if not opt.no_instance:
+        netG_input_nc += 1
+    if self.use_features:
+        netG_input_nc += opt.feat_num                  
+    self.netG = networks.define_G(netG_input_nc, opt.output_nc, opt.ngf, opt.netG, 
+                                  opt.n_downsample_global, opt.n_blocks_global, opt.n_local_enhancers, 
+                                  opt.n_blocks_local, opt.norm, gpu_ids=self.gpu_ids)        
+
+    # Discriminator network (Only initialize if training)
+    if self.isTrain:
+        use_sigmoid = opt.no_lsgan
+        netD_input_nc = input_nc + opt.output_nc
         if not opt.no_instance:
-            netG_input_nc += 1
-        if self.use_features:
-            netG_input_nc += opt.feat_num                  
-        self.netG = networks.define_G(netG_input_nc, opt.output_nc, opt.ngf, opt.netG, 
-                                      opt.n_downsample_global, opt.n_blocks_global, opt.n_local_enhancers, 
-                                      opt.n_blocks_local, opt.norm, gpu_ids=self.gpu_ids)        
+            netD_input_nc += 1
+        self.netD = networks.define_D(netD_input_nc, opt.ndf, opt.n_layers_D, opt.norm, use_sigmoid, 
+                                      opt.num_D, not opt.no_ganFeat_loss, gpu_ids=self.gpu_ids)
 
-        # Discriminator network
-        if self.isTrain:
-            use_sigmoid = opt.no_lsgan
-            netD_input_nc = input_nc + opt.output_nc
-            if not opt.no_instance:
-                netD_input_nc += 1
-            self.netD = networks.define_D(netD_input_nc, opt.ndf, opt.n_layers_D, opt.norm, use_sigmoid, 
-                                          opt.num_D, not opt.no_ganFeat_loss, gpu_ids=self.gpu_ids)
+    ### Encoder network
+    if self.gen_features:          
+        self.netE = networks.define_G(opt.output_nc, opt.feat_num, opt.nef, 'encoder', 
+                                      opt.n_downsample_E, norm=opt.norm, gpu_ids=self.gpu_ids)
 
-        ### Encoder network
-        if self.gen_features:          
-            self.netE = networks.define_G(opt.output_nc, opt.feat_num, opt.nef, 'encoder', 
-                                          opt.n_downsample_E, norm=opt.norm, gpu_ids=self.gpu_ids)
-
-        # Conditional .cuda() logic
-        if torch.cuda.is_available():
-            self.netG = self.netG.cuda()
+    # Conditional .cuda() logic
+    if torch.cuda.is_available():
+        self.netG = self.netG.cuda()
+        if self.isTrain:  # Only move netD to GPU if training
             self.netD = self.netD.cuda()
-            if self.gen_features:
-                self.netE = self.netE.cuda()
-        else:
-            self.netG = self.netG.cpu()
+        if self.gen_features:
+            self.netE = self.netE.cuda()
+    else:
+        self.netG = self.netG.cpu()
+        if self.isTrain:  # Only move netD to CPU if training
             self.netD = self.netD.cpu()
-            if self.gen_features:
-                self.netE = self.netE.cpu()
-        
-        if self.opt.verbose:
-                print('---------- Networks initialized -------------')
+        if self.gen_features:
+            self.netE = self.netE.cpu()
+    
+    if self.opt.verbose:
+        print('---------- Networks initialized -------------')
 
-        # load networks
-        if not self.isTrain or opt.continue_train or opt.load_pretrain:
-            pretrained_path = '' if not self.isTrain else opt.load_pretrain
-            self.load_network(self.netG, 'G', opt.which_epoch, pretrained_path)            
-            if self.isTrain:
-                self.load_network(self.netD, 'D', opt.which_epoch, pretrained_path)  
-            if self.gen_features:
-                self.load_network(self.netE, 'E', opt.which_epoch, pretrained_path)              
-
-        # set loss functions and optimizers
+    # Load networks
+    if not self.isTrain or opt.continue_train or opt.load_pretrain:
+        pretrained_path = '' if not self.isTrain else opt.load_pretrain
+        self.load_network(self.netG, 'G', opt.which_epoch, pretrained_path)            
         if self.isTrain:
-            if opt.pool_size > 0 and (len(self.gpu_ids)) > 1:
-                raise NotImplementedError("Fake Pool Not Implemented for MultiGPU")
-            self.fake_pool = ImagePool(opt.pool_size)
-            self.old_lr = opt.lr
+            self.load_network(self.netD, 'D', opt.which_epoch, pretrained_path)  
+        if self.gen_features:
+            self.load_network(self.netE, 'E', opt.which_epoch, pretrained_path)              
 
-            # define loss functions
-            self.loss_filter = self.init_loss_filter(not opt.no_ganFeat_loss, not opt.no_vgg_loss)
-            
-            self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)   
-            self.criterionFeat = torch.nn.L1Loss()
-            if not opt.no_vgg_loss:             
-                self.criterionVGG = networks.VGGLoss(self.gpu_ids)
-                
+    # Set loss functions and optimizers only for training
+    if self.isTrain:
+        if opt.pool_size > 0 and (len(self.gpu_ids)) > 1:
+            raise NotImplementedError("Fake Pool Not Implemented for MultiGPU")
+        self.fake_pool = ImagePool(opt.pool_size)
+        self.old_lr = opt.lr
+
+        # Define loss functions
+        self.loss_filter = self.init_loss_filter(not opt.no_ganFeat_loss, not opt.no_vgg_loss)
         
-            # Names so we can breakout loss
-            self.loss_names = self.loss_filter('G_GAN','G_GAN_Feat','G_VGG','D_real', 'D_fake')
+        self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)   
+        self.criterionFeat = torch.nn.L1Loss()
+        if not opt.no_vgg_loss:             
+            self.criterionVGG = networks.VGGLoss(self.gpu_ids)
+        
+        # Loss names for the losses
+        self.loss_names = self.loss_filter('G_GAN','G_GAN_Feat','G_VGG','D_real', 'D_fake')
 
-            # initialize optimizers
-            # optimizer G
-            if opt.niter_fix_global > 0:                
-                import sys
-                if sys.version_info >= (3,0):
-                    finetune_list = set()
-                else:
-                    from sets import Set
-                    finetune_list = Set()
+        # Initialize optimizers
+        # Optimizer for G
+        params = list(self.netG.parameters())
+        if self.gen_features:              
+            params += list(self.netE.parameters())         
+        self.optimizer_G = torch.optim.Adam(params, lr=opt.lr, betas=(opt.beta1, 0.999))                            
 
-                params_dict = dict(self.netG.named_parameters())
-                params = []
-                for key, value in params_dict.items():       
-                    if key.startswith('model' + str(opt.n_local_enhancers)):                    
-                        params += [value]
-                        finetune_list.add(key.split('.')[0])  
-                print('------------- Only training the local enhancer network (for %d epochs) ------------' % opt.niter_fix_global)
-                print('The layers that are finetuned are ', sorted(finetune_list))                         
-            else:
-                params = list(self.netG.parameters())
-            if self.gen_features:              
-                params += list(self.netE.parameters())         
-            self.optimizer_G = torch.optim.Adam(params, lr=opt.lr, betas=(opt.beta1, 0.999))                            
-
-            # optimizer D                        
+        # Optimizer for D                        
+        if self.isTrain:
             params = list(self.netD.parameters())    
             self.optimizer_D = torch.optim.Adam(params, lr=opt.lr, betas=(opt.beta1, 0.999))
 
