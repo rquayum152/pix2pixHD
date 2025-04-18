@@ -35,6 +35,8 @@ def initialize(self, opt):
     self.netG = networks.define_G(netG_input_nc, opt.output_nc, opt.ngf, opt.netG, 
                                   opt.n_downsample_global, opt.n_blocks_global, opt.n_local_enhancers, 
                                   opt.n_blocks_local, opt.norm, gpu_ids=self.gpu_ids)        
+    
+    print("netG initialized:", self.netG)
 
     # Discriminator network (Only initialize if training)
     if self.isTrain:
