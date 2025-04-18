@@ -24,6 +24,7 @@ webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % (opt.na
 
 # test
 if not opt.engine and not opt.onnx:
+    print('hello')
     model = create_model(opt)
     model.initialize(opt)
     if opt.data_type == 16:
