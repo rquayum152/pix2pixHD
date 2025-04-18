@@ -59,6 +59,7 @@ for i, data in enumerate(dataset):
         generated = run_onnx(opt.onnx, opt.data_type, minibatch, [data['label'], data['inst']])
     else:        
         print(type(model))
+        print(model.netG)
         generated = model.inference(data['label'], data['inst'], data['image'])
         
     visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
