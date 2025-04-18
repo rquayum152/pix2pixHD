@@ -301,26 +301,26 @@ def initialize(self, opt):
 
 class InferenceModel(Pix2PixHDModel):
 
-    def initialize(self, opt):
-        self.opt = opt
-        self.isTrain = False
-        self.gpu_ids = opt.gpu_ids
+    # def initialize(self, opt):
+    #     self.opt = opt
+    #     self.isTrain = False
+    #     self.gpu_ids = opt.gpu_ids
 
-        # Define and load the generator network (netG)
-        self.netG = networks.define_G(netG_input_nc, opt.output_nc, opt.ngf, opt.netG, 
-                                  opt.n_downsample_global, opt.n_blocks_global, opt.n_local_enhancers, 
-                                  opt.n_blocks_local, opt.norm, gpu_ids=self.gpu_ids) 
-        self.load_network(self.netG, 'G', opt.which_epoch, opt)
+    #     # Define and load the generator network (netG)
+    #     self.netG = networks.define_G(netG_input_nc, opt.output_nc, opt.ngf, opt.netG, 
+    #                               opt.n_downsample_global, opt.n_blocks_global, opt.n_local_enhancers, 
+    #                               opt.n_blocks_local, opt.norm, gpu_ids=self.gpu_ids) 
+    #     self.load_network(self.netG, 'G', opt.which_epoch, opt)
 
     def forward(self, inp):
         label, inst = inp
         return self.inference(label, inst)
 
-    def inference(self, label, inst, image=None):
-        if not hasattr(self, 'netG') or self.netG is None:
-            raise RuntimeError("Generator network (netG) has not been initialized.")
-        with torch.no_grad():
-            return self.netG(label, inst)
+    # def inference(self, label, inst, image=None):
+    #     if not hasattr(self, 'netG') or self.netG is None:
+    #         raise RuntimeError("Generator network (netG) has not been initialized.")
+    #     with torch.no_grad():
+    #         return self.netG(label, inst)
 
 
     # def inference(self, label, inst, image=None):
