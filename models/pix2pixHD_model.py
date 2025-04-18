@@ -299,7 +299,7 @@ class InferenceModel(Pix2PixHDModel):
         label, inst = inp
         return self.inference(label, inst)
 
-    def inference(self, label, inst):
+    def inference(self, label, inst, image=None):
         with torch.no_grad():  
             generated_image = self.netG(label, inst)
         return generated_image
