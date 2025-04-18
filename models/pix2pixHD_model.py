@@ -63,7 +63,10 @@ def initialize(self, opt):
             self.netD = self.netD.cpu()
         if self.gen_features:
             self.netE = self.netE.cpu()
-    
+
+    if not self.isTrain:
+        self.load_network(self.netG, 'G', opt.which_epoch, opt)
+
     if self.opt.verbose:
         print('---------- Networks initialized -------------')
 
