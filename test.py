@@ -27,6 +27,7 @@ if not opt.engine and not opt.onnx:
     print('hello')
     model = create_model(opt)
     model.initialize(opt)
+    print(f"Loading model from: checkpoints/{opt.name}/{opt.which_epoch}_net_G.pth")
     if opt.data_type == 16:
         model.half()
     elif opt.data_type == 8:
