@@ -28,7 +28,7 @@ model = create_model(opt)
 # Move model to the chosen device
 model.to(device)
 
-print(f"Model is on device: {next(model.parameters()).device}")
+# print(f"Model is on device: {next(model.parameters()).device}")
 
 #opt = TrainOptions().parse()
 iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
