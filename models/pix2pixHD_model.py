@@ -53,12 +53,14 @@ class Pix2PixHDModel(BaseModel):
         # Conditional .cuda() logic
         if torch.cuda.is_available():
             self.netG = self.netG.cuda()
-            self.netD = self.netD.cuda()
+            if self.isTrain:
+                self.netD = self.netD.cuda() # change new_master
             if self.gen_features:
                 self.netE = self.netE.cuda()
         else:
             self.netG = self.netG.cpu()
-            self.netD = self.netD.cpu()
+            if self.isTrain:
+                self.netD = self.netD.cpu() # change new_master
             if self.gen_features:
                 self.netE = self.netE.cpu()
         
