@@ -68,6 +68,7 @@ class Pix2PixHDModel(BaseModel):
                 print('---------- Networks initialized -------------')
 
         # load networks
+        print(opt.load_pretrain) #change
         if not self.isTrain or opt.continue_train or opt.load_pretrain:
             pretrained_path = '' if not self.isTrain else opt.load_pretrain
             self.load_network(self.netG, 'G', opt.which_epoch, pretrained_path)            
