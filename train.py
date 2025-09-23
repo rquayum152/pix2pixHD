@@ -74,6 +74,8 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     if epoch != start_epoch:
         epoch_iter = epoch_iter % dataset_size
     for i, data in enumerate(dataset, start=epoch_iter):
+        print("Label range:", data['label'].min().item(), data['label'].max().item())
+        print("Inst range:", data['inst'].min().item(), data['inst'].max().item())
         if total_steps % opt.print_freq == print_delta:
             iter_start_time = time.time()
         total_steps += opt.batchSize
