@@ -20,17 +20,17 @@ from util.visualizer import Visualizer
 opt = TrainOptions().parse()
 
 # Set device based on GPU availability
-device = torch.device("cpu")
+# device = torch.device("cpu")
 
-# Initialize model here
-model = create_model(opt)
+# # Initialize model here
+# model = create_model(opt)
 
-# Move model to the chosen device
-model.to(device)
+# # Move model to the chosen device
+# model.to(device)
 
 # print(f"Model is on device: {next(model.parameters()).device}")
 
-#opt = TrainOptions().parse()
+opt = TrainOptions().parse()
 iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
 if opt.continue_train:
     try:
@@ -61,10 +61,7 @@ if opt.fp16:
     model, [optimizer_G, optimizer_D] = amp.initialize(model, [model.optimizer_G, model.optimizer_D], opt_level='O1')             
     model = torch.nn.DataParallel(model, device_ids=opt.gpu_ids)
 else:
-    # optimizer_G, optimizer_D = model.module.optimizer_G, model.module.optimizer_D  # old version of torch
-    net = model.module if hasattr(model, 'module') else model
-    optimizer_G, optimizer_D = net.optimizer_G, net.optimizer_D 
-
+    optimizer_G, optimizer_D = model.module.optimizer_G, model.module.optimizer_D  # old version of torch
 
 total_steps = (start_epoch-1) * dataset_size + epoch_iter
 
